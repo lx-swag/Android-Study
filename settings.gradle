@@ -1,0 +1,13 @@
+include ':520'
+include ':512'
+include ':511_resolver'
+include ':511_provier'
+include ':508'
+include ':430'
+include ':427'
+include ':425'
+include ':423'
+include ':421'
+include ':420'
+include ':419'
+rootProject.name = "android学习"
