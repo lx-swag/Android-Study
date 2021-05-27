@@ -56,6 +56,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -69,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private CameraDevice cameraDevice;
     private Surface textureViewSurface;
     private Surface imageReaderSurface;
+    private CameraCharacteristics cameraCharacteristics;
     private CameraCaptureSession cameraCaptureSession;
     private CameraCaptureSession previewSession;
     private Button btnPhoto;
@@ -87,9 +89,9 @@ public class MainActivity extends AppCompatActivity {
             cameraCaptureSession = session;
             try {
                 CaptureRequest.Builder builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                builder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
                 builder.addTarget(textureViewSurface);
-                builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);//自动开启闪关灯.
-                builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);//自动聚焦
                 cameraCaptureSession.setRepeatingRequest(builder.build(), null,null);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
@@ -116,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 takePhoto();
+
             }
         });
         stopRecorder.setOnClickListener(new View.OnClickListener() {
@@ -174,7 +177,23 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     public boolean checkSelfPermissions(){
+
         return checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    }
+    public void switchCamera(){
+        if (cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) == CameraMetadata.LENS_FACING_FRONT){
+            try {
+                cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraManager.getCameraIdList()[1]);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+        }else {
+            try {
+                cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraManager.getCameraIdList()[0]);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+        }
     }
     @SuppressLint("MissingPermission")
     public void openCamera() throws CameraAccessException {
@@ -184,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
              @Override
              public void onImageAvailable(ImageReader reader) {
                  Log.i("image", "onImageAvailable: got a image");
-                 Image image = reader.acquireLatestImage();
+                 Image image = reader.acquireNextImage();
                  ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                  final byte[] bytes = new byte[buffer.remaining()];
                  buffer.get(bytes);
@@ -200,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
          },null);
 
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraManager.getCameraIdList()[0]);
+         cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraManager.getCameraIdList()[0]);
         StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
         if (checkSelfPermissions()) {
@@ -230,12 +249,21 @@ public class MainActivity extends AppCompatActivity {
     private void takePhoto(){
         try {
             CaptureRequest.Builder builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            builder.set(CaptureRequest.FLASH_MODE,
+                    CaptureRequest.FLASH_MODE_TORCH);
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+            builder.set(CaptureRequest.FLASH_MODE,CaptureRequest.FLASH_MODE_TORCH);
             builder.addTarget(imageReaderSurface);
             builder.set(CaptureRequest.JPEG_ORIENTATION,90);
             //但是，这个方法是否可用，是依赖于底层的，
             // 也就是说，底层没有做相应的处理的话，设置之后才有效果，如果底层没有做相应的处理，是没有作用。（如三星手机是没有做相应的处理的）
-
-            cameraCaptureSession.capture(builder.build(),null,null);
+            CaptureRequest captureRequest = builder.build();
+//            List<CaptureRequest> list = new ArrayList<>();
+//            for (int i = 0; i < 10; i++) {
+//                list.add(captureRequest);
+//            }
+//            cameraCaptureSession.captureBurst(list,null,null);//一次拍10张
+            cameraCaptureSession.capture(captureRequest,null,null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
