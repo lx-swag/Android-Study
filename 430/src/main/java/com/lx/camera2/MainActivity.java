@@ -17,6 +17,7 @@ import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageReader imageReader;
     private ImageView imageView;
     private MediaRecorder recorder;
-    private CaptureRequest.Builder previewBuilder;
+     private CaptureRequest.Builder previewBuilder;
     private Button stopRecorder;
     private String mNextVideoAbsolutePath;
     private Size mVideoSize;
@@ -118,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 takePhoto();
+
 
             }
         });
@@ -280,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     previewSession = session;
-                    updatePreview();
+//                    updatePreview();
                     recorder.start();
                 }
 
@@ -334,7 +336,12 @@ public class MainActivity extends AppCompatActivity {
     private String getVideoFilePath(Context context) {//获取路径函数
         final File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);//卸载应用，删除存储的文件
 //        final File dir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)；
-        Log.e("TAG", "getVideoFilePath: "+dir.getAbsolutePath() );
+        File filesDir = getFilesDir();
+//        File[] files = getExternalFilesDirs(Environment.DIRECTORY_PICTURES);
+//        for (File file:files){
+//            Log.e("TAG", "getVideoFilePath: "+file.getPath() );
+//        }
+        Log.e("TAG", "getVideoFilePath: "+filesDir.getPath() );
         String timeStamp = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(new Date());
         File image = null;
         try {
